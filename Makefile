@@ -2,6 +2,12 @@ _port := $$(cat ./kafka.properties | grep bootstrap\.servers | cut -f 2 -d '='| 
 
 _topic_name := $$(cat ./config.sh | grep topic_name | cut -f 2 -d '=')
 
+vote:
+	go run producer.go config.go ${singer}
+
+get-votes:
+	go run consumer.go config.go
+
 topic:
 	docker-compose exec broker \
 	  kafka-topics --create \
