@@ -13,7 +13,7 @@ import (
 func main() {
     fmt.Printf("... %#v\n", os.Args)
     if len(os.Args) != 2 {
-        fmt.Fprintf(os.Stderr, "Usage: %s <config-file-path>\n",
+        fmt.Fprintf(os.Stderr, "Usage: %s <name of singer>\n",
             os.Args[0])
         os.Exit(1)
     }
