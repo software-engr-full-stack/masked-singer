@@ -25,4 +25,4 @@ delete-topic:
 sh:
 	docker exec --interactive --tty broker bash
 
-.PHONY: topic
+.PHONY: vote get-votes topic delete-topic sh
