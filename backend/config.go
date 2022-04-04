@@ -9,16 +9,17 @@ import (
 
 type Config struct {
     Kafka kafka.ConfigMap
-    User map[string]interface{}
+    User UserConfigType
+}
+
+type UserConfigType struct {
+    CompetitionName string
 }
 
 //go:embed kafka.properties
 var kafkaProperties []byte
 
-//go:embed config.sh
-var config []byte
-
-func NewConfig() Config {
+func NewConfig(competitionName string) Config {
     kconfig := make(map[string]kafka.ConfigValue)
 
     lines := strings.Split(string(kafkaProperties), "\n")
@@ -31,19 +32,15 @@ func NewConfig() Config {
         }
     }
 
-    lines = strings.Split(string(config), "\n")
-    user := make(map[string]interface{})
-    for _, line := range lines {
-        if !strings.HasPrefix(line, "#") && strings.TrimSpace(line) != "" {
-            kv := strings.Split(line, "=")
-            parameter := strings.TrimSpace(kv[0])
-            value := strings.TrimSpace(kv[1])
-            user[parameter] = value
-        }
+    competitionNameTrimmed := strings.TrimSpace(competitionName)
+    if competitionNameTrimmed == "" {
+        panic("competition name must not be blank")
     }
 
     return Config{
         Kafka: kconfig,
-        User: user,
+        User: UserConfigType{
+            CompetitionName: competitionNameTrimmed,
+        },
     }
 }

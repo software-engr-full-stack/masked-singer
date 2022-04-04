@@ -5,30 +5,27 @@ import (
     "math/rand"
     "os"
     "time"
+    "strings"
 
     "github.com/confluentinc/confluent-kafka-go/kafka"
     "github.com/google/uuid"
 )
 
 func main() {
-    fmt.Printf("... %#v\n", os.Args)
-    if len(os.Args) != 2 {
-        fmt.Fprintf(os.Stderr, "Usage: %s <name of singer>\n",
+    if len(os.Args) != 3 {
+        fmt.Fprintf(os.Stderr, "Usage: %s <name-of-competition> <name-of-singer>\n",
             os.Args[0])
         os.Exit(1)
     }
-    config := NewConfig()
+    competitionName := os.Args[1]
+    config := NewConfig(competitionName)
 
     rand.Seed(time.Now().UnixNano())
 
-    fmt.Printf("... %#v %#v\n", config, rand.Float32())
-
-    topic := config.User["topic_name"].(string)
     p, err := kafka.NewProducer(&config.Kafka)
 
     if err != nil {
-        fmt.Printf("Failed to create producer: %s", err)
-        os.Exit(1)
+        panic(fmt.Errorf("Failed to create producer: %s", err))
     }
 
     // Go-routine to handle message delivery reports and
@@ -47,10 +44,17 @@ func main() {
         }
     }()
 
-    singerName := os.Args[1]
+    singerName := os.Args[2]
+    singerNameTrimmed := strings.TrimSpace(singerName)
+    if singerNameTrimmed == "" {
+        panic("singer name must not be blank")
+    }
+
     p.Produce(&kafka.Message{
-        TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-        Key:            []byte(singerName),
+        TopicPartition: kafka.TopicPartition{
+            Topic: &config.User.CompetitionName, Partition: kafka.PartitionAny,
+        },
+        Key:            []byte(singerNameTrimmed),
         Value:          []byte(uuid.New().String()),
     }, nil)
 

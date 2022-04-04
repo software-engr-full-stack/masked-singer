@@ -11,7 +11,15 @@ import (
 )
 
 func main() {
-    config := NewConfig()
+    fmt.Printf("... %#v\n", os.Args)
+    if len(os.Args) != 2 {
+        fmt.Fprintf(os.Stderr, "Usage: %s <name-of-competition>\n",
+            os.Args[0])
+        os.Exit(1)
+    }
+    competitionName := os.Args[1]
+    config := NewConfig(competitionName)
+
     kconfig := config.Kafka
     kconfig["group.id"] = "kafka-go-getting-started"
     kconfig["auto.offset.reset"] = "earliest"
@@ -23,8 +31,7 @@ func main() {
         os.Exit(1)
     }
 
-    topic := config.User["topic_name"].(string)
-    err = c.SubscribeTopics([]string{topic}, nil)
+    err = c.SubscribeTopics([]string{config.User.CompetitionName}, nil)
     // Set up a channel for handling Ctrl-C, etc
     sigchan := make(chan os.Signal, 1)
     signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
