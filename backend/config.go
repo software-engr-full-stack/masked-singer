@@ -1,6 +1,7 @@
 package main
 
 import (
+    "fmt"
     "strings"
     _ "embed"
 
@@ -14,12 +15,13 @@ type Config struct {
 
 type UserConfigType struct {
     CompetitionName string
+    GroupID string
 }
 
 //go:embed kafka.properties
 var kafkaProperties []byte
 
-func NewConfig(competitionName string) Config {
+func NewConfig(competitionName string) (Config, error) {
     kconfig := make(map[string]kafka.ConfigValue)
 
     lines := strings.Split(string(kafkaProperties), "\n")
@@ -33,14 +35,16 @@ func NewConfig(competitionName string) Config {
     }
 
     competitionNameTrimmed := strings.TrimSpace(competitionName)
+    var empty Config
     if competitionNameTrimmed == "" {
-        panic("competition name must not be blank")
+        return empty, fmt.Errorf("competition name must not be blank")
     }
 
     return Config{
         Kafka: kconfig,
         User: UserConfigType{
             CompetitionName: competitionNameTrimmed,
+            GroupID: "masked-singer",
         },
-    }
+    }, nil
 }

@@ -6,45 +6,48 @@ import (
     "os/signal"
     "syscall"
     "time"
+    "strings"
 
     "github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
-func main() {
-    fmt.Printf("... %#v\n", os.Args)
-    if len(os.Args) != 2 {
-        fmt.Fprintf(os.Stderr, "Usage: %s <name-of-competition>\n",
-            os.Args[0])
-        os.Exit(1)
+func consume(competitionName, singerName string) error {
+    config, err := NewConfig(competitionName)
+    if err != nil {
+        return err
     }
-    competitionName := os.Args[1]
-    config := NewConfig(competitionName)
+    singerNameTrimmed := strings.TrimSpace(singerName)
+    if singerNameTrimmed == "" {
+        panic("singer name must not be blank")
+    }
 
     kconfig := config.Kafka
-    kconfig["group.id"] = "kafka-go-getting-started"
+    kconfig["group.id"] = config.User.GroupID
     kconfig["auto.offset.reset"] = "earliest"
 
     c, err := kafka.NewConsumer(&kconfig)
-
     if err != nil {
-        fmt.Printf("Failed to create consumer: %s", err)
-        os.Exit(1)
+        return fmt.Errorf("failed to create consumer: %s", err)
     }
 
     err = c.SubscribeTopics([]string{config.User.CompetitionName}, nil)
+    if err != nil {
+        return err
+    }
     // Set up a channel for handling Ctrl-C, etc
     sigchan := make(chan os.Signal, 1)
     signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
 
     // Process messages
     run := true
-    for run == true {
+    const readDelay = 100
+    for run {
         select {
         case sig := <-sigchan:
             fmt.Printf("Caught signal %v: terminating\n", sig)
             run = false
         default:
-            ev, err := c.ReadMessage(100 * time.Millisecond)
+            ev, err := c.ReadMessage(readDelay * time.Millisecond)
             if err != nil {
                 // Errors are informational and automatically handled by the consumer
                 continue
@@ -55,4 +58,6 @@ func main() {
     }
 
     c.Close()
+
+    return nil
 }

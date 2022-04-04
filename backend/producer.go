@@ -2,30 +2,25 @@ package main
 
 import (
     "fmt"
-    "math/rand"
-    "os"
-    "time"
     "strings"
 
     "github.com/confluentinc/confluent-kafka-go/kafka"
     "github.com/google/uuid"
 )
 
-func main() {
-    if len(os.Args) != 3 {
-        fmt.Fprintf(os.Stderr, "Usage: %s <name-of-competition> <name-of-singer>\n",
-            os.Args[0])
-        os.Exit(1)
+func produce(competitionName, singerName string) error {
+    config, err := NewConfig(competitionName)
+    if err != nil {
+        return err
     }
-    competitionName := os.Args[1]
-    config := NewConfig(competitionName)
-
-    rand.Seed(time.Now().UnixNano())
+    singerNameTrimmed := strings.TrimSpace(singerName)
+    if singerNameTrimmed == "" {
+        panic("singer name must not be blank")
+    }
 
     p, err := kafka.NewProducer(&config.Kafka)
-
     if err != nil {
-        panic(fmt.Errorf("Failed to create producer: %s", err))
+        return err
     }
 
     // Go-routine to handle message delivery reports and
@@ -44,21 +39,21 @@ func main() {
         }
     }()
 
-    singerName := os.Args[2]
-    singerNameTrimmed := strings.TrimSpace(singerName)
-    if singerNameTrimmed == "" {
-        panic("singer name must not be blank")
-    }
-
-    p.Produce(&kafka.Message{
+    err = p.Produce(&kafka.Message{
         TopicPartition: kafka.TopicPartition{
             Topic: &config.User.CompetitionName, Partition: kafka.PartitionAny,
         },
         Key:            []byte(singerNameTrimmed),
         Value:          []byte(uuid.New().String()),
     }, nil)
+    if err != nil {
+        return err
+    }
 
+    const flushDelay = 15 * 1000
     // Wait for all messages to be delivered
-    p.Flush(15 * 1000)
+    p.Flush(flushDelay)
     p.Close()
+
+    return nil
 }

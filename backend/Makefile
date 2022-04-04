@@ -1,10 +1,15 @@
 _port := $$(cat ./kafka.properties | grep bootstrap\.servers | cut -f 2 -d '='| cut -f 2 -d ':')
 
-vote:
-	go run producer.go config.go ${competition} ${singer}
+_build_file := ./build/masked-singer
 
-get-votes:
-	go run consumer.go config.go ${competition}
+_build:
+	go build -o ${_build_file} *.go
+
+vote: _build
+	${_build_file} 'vote' ${competition} ${singer}
+
+get-votes: _build
+	${_build_file} 'get-votes' ${competition} ${singer}
 
 competition:
 	docker-compose exec broker \
@@ -28,4 +33,4 @@ list-topics:
 sh:
 	docker exec --interactive --tty broker bash
 
-.PHONY: vote get-votes topic delete-topic sh
+.PHONY: vote get-votes competition delete-competition list-topics sh _build
