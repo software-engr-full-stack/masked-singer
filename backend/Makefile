@@ -30,6 +30,10 @@ list-topics:
 	  kafka-topics --list \
 	    --bootstrap-server localhost:${_port}
 
+reset-competition:
+	make delete-competition competition=${competition}; \
+	make competition competition=${competition}
+
 sh:
 	docker exec --interactive --tty broker bash
 
