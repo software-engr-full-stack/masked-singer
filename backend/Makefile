@@ -5,6 +5,19 @@ _build_file := ./build/masked-singer
 _build:
 	go build -o ${_build_file} *.go
 
+serve: _build
+	if type nodemon >/dev/null; then \
+		nodemon --signal SIGTERM --ext go --exec "${_build_file} 'serve'"; \
+	else \
+		${_build_file} 'serve'; \
+	fi
+
+http-vote:
+	curl --header "Content-Type: application/json" \
+			 --request POST \
+			 --data '{"action": "vote", "competition_name": "${competition}", "singer_name": "${singer}"}' \
+			 http://localhost:8082/vote
+
 vote: _build
 	${_build_file} 'vote' ${competition} ${singer}
 
