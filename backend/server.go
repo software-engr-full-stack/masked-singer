@@ -76,6 +76,8 @@ func getVotes(rw http.ResponseWriter, req *http.Request) {
         err = ws.WriteMessage(1, marsh)
         if err != nil {
             log.Println(err)
+            ws.Close()
+            break
         }
 
         // DEBUG: for curl test, put line breaks between responses
