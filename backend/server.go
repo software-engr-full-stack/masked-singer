@@ -44,8 +44,9 @@ func getVotes(rw http.ResponseWriter, req *http.Request) {
     competitionName := strings.TrimSpace(query["competition_name"][0])
 
     data := make(chan ConsumeType)
+    closeConsumer := make(chan bool)
     go func() {
-        err = consume(competitionName, data)
+        err = consume(competitionName, data, closeConsumer)
         if err != nil {
             log.Println(err)
         }
@@ -77,6 +78,7 @@ func getVotes(rw http.ResponseWriter, req *http.Request) {
         if err != nil {
             log.Println(err)
             ws.Close()
+            closeConsumer <- true
             break
         }
 

@@ -32,7 +32,8 @@ func main() {
         competitionName := os.Args[2]
 
         data := make(chan ConsumeType)
-        err := consume(competitionName, data)
+        closeConsumer := make(chan bool)
+        err := consume(competitionName, data, closeConsumer)
         if err != nil {
             panic(err)
         }
