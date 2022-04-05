@@ -2,21 +2,34 @@ _port := $$(cat ./kafka.properties | grep bootstrap\.servers | cut -f 2 -d '='| 
 
 _build_file := ./build/masked-singer
 
+_http_port := 8082
+
 _build:
 	go build -o ${_build_file} *.go
 
-serve: _build
+serve:
 	if type nodemon >/dev/null; then \
-		nodemon --signal SIGTERM --ext go --exec "${_build_file} 'serve'"; \
+		nodemon --signal SIGTERM --ext go --exec "make _build && ${_build_file} 'serve' ${_http_port}"; \
 	else \
-		${_build_file} 'serve'; \
+		make _build && ${_build_file} 'serve' ${_http_port}; \
 	fi
 
 http-vote:
 	curl --header "Content-Type: application/json" \
 			 --request POST \
 			 --data '{"action": "vote", "competition_name": "${competition}", "singer_name": "${singer}"}' \
-			 http://localhost:8082/vote
+			 http://localhost:${_http_port}/vote
+
+http-get-votes:
+	curl --include \
+	     --no-buffer \
+	     --header "Connection: Upgrade" \
+	     --header "Upgrade: websocket" \
+	     --header "Host: localhost:${_http_port}" \
+	     --header "Origin: http://localhost:${_http_port}" \
+	     --header "Sec-WebSocket-Key: SGVsbG8sIHdvcmxkIQ==" \
+	     --header "Sec-WebSocket-Version: 13" \
+	     http://localhost:${_http_port}/get-votes\?competition_name\=${competition}
 
 vote: _build
 	${_build_file} 'vote' ${competition} ${singer}

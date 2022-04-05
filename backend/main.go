@@ -8,14 +8,16 @@ import (
 )
 
 func main() {
-    if len(os.Args) < 2 {
+    if len(os.Args) < 3 {
         panic("must pass at least one arg, 'produce' or 'consume'")
     }
 
     switch action := os.Args[1]; action {
     case "serve":
-        http.HandleFunc("/vote", serve)
-        log.Fatal(http.ListenAndServe(":8082", nil))
+        port := os.Args[2]
+        http.HandleFunc("/vote", vote)
+        http.HandleFunc("/get-votes", getVotes)
+        log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
 
     case "vote":
         competitionName := os.Args[2]
@@ -29,7 +31,8 @@ func main() {
     case "get-votes":
         competitionName := os.Args[2]
 
-        err := consume(competitionName)
+        data := make(chan ConsumeType)
+        err := consume(competitionName, data)
         if err != nil {
             panic(err)
         }

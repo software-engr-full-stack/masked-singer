@@ -2,10 +2,13 @@ package main
 
 import (
     "encoding/json"
-    "fmt"
     "net/http"
+    "net/url"
     "io"
     "strings"
+    "log"
+
+    "github.com/gorilla/websocket"
 )
 
 type RequestType struct {
@@ -14,31 +17,71 @@ type RequestType struct {
     SingerName string `json:"singer_name"`
 }
 
-func serve(rw http.ResponseWriter, req *http.Request) {
+func vote(rw http.ResponseWriter, req *http.Request) {
     body, err := io.ReadAll(req.Body)
     if err != nil {
-        panic(err)
+        log.Println(err)
     }
 
     var request RequestType
     err = json.Unmarshal(body, &request)
     if err != nil {
-        panic(err)
+        log.Println(err)
     }
 
-    switch action := strings.TrimSpace(request.Action); action {
-    case "vote":
-        err := produce(request.CompetitionName, request.SingerName)
+    err = produce(request.CompetitionName, request.SingerName)
+    if err != nil {
+        log.Println(err)
+    }
+}
+
+func getVotes(rw http.ResponseWriter, req *http.Request) {
+    query, err := url.ParseQuery(req.URL.RawQuery)
+    if err != nil {
+        log.Println(err)
+    }
+
+    competitionName := strings.TrimSpace(query["competition_name"][0])
+
+    data := make(chan ConsumeType)
+    go func() {
+        err = consume(competitionName, data)
         if err != nil {
-            panic(err)
+            log.Println(err)
+        }
+    }()
+
+    var upgrader = websocket.Upgrader{
+        ReadBufferSize:  1024,
+        WriteBufferSize: 1024,
+    }
+
+    upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+
+    // upgrade this connection to a WebSocket
+    // connection
+    ws, err := upgrader.Upgrade(rw, req, nil)
+    if err != nil {
+        log.Println(err)
+    }
+
+    log.Println("Client Connected")
+
+    for item := range data {
+        marsh, err := json.Marshal(item)
+        if err != nil {
+            log.Println(err)
         }
 
-    case "get-votes":
-        err := consume(request.CompetitionName)
+        err = ws.WriteMessage(1, marsh)
         if err != nil {
-            panic(err)
+            log.Println(err)
         }
-    default:
-        panic(fmt.Errorf("invalid action %#v", action))
+
+        // DEBUG: for curl test, put line breaks between responses
+        err = ws.WriteMessage(1, []byte("\n"))
+        if err != nil {
+            log.Println(err)
+        }
     }
 }

@@ -10,7 +10,13 @@ import (
     "github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
-func consume(competitionName string) error {
+type ConsumeType struct {
+    Topic string `json:"topic"`
+    Key string `json:"key"`
+    Value string `json:"value"`
+}
+
+func consume(competitionName string, data chan<- ConsumeType) error {
     config, err := NewConfig(competitionName)
     if err != nil {
         return err
@@ -47,8 +53,12 @@ func consume(competitionName string) error {
                 // Errors are informational and automatically handled by the consumer
                 continue
             }
-            fmt.Printf("Consumed event from topic %s: key = %-10s value = %s\n",
-                *ev.TopicPartition.Topic, string(ev.Key), string(ev.Value))
+
+            data <- ConsumeType{
+                Topic: *ev.TopicPartition.Topic,
+                Key: string(ev.Key),
+                Value: string(ev.Value),
+            }
         }
     }
 
