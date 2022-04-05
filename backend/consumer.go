@@ -11,14 +11,10 @@ import (
     "github.com/confluentinc/confluent-kafka-go/kafka"
 )
 
-func consume(competitionName, singerName string) error {
+func consume(competitionName string) error {
     config, err := NewConfig(competitionName)
     if err != nil {
         return err
-    }
-    singerNameTrimmed := strings.TrimSpace(singerName)
-    if singerNameTrimmed == "" {
-        panic("singer name must not be blank")
     }
 
     kconfig := config.Kafka

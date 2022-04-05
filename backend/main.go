@@ -21,7 +21,7 @@ func main() {
         }
 
     case "get-votes":
-        err := consume(competitionName, singerName)
+        err := consume(competitionName)
         if err != nil {
             panic(err)
         }
