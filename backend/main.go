@@ -3,6 +3,10 @@ package main
 import (
     "net/http"
     "os"
+    "os/signal"
+    "syscall"
+    "time"
+    "context"
     "log"
     "fmt"
 )
@@ -17,7 +21,27 @@ func main() {
         port := os.Args[2]
         http.HandleFunc("/vote", vote)
         http.HandleFunc("/get-votes", getVotes)
-        log.Fatal(http.ListenAndServe(fmt.Sprintf(":%s", port), nil))
+
+        server := &http.Server{Addr: fmt.Sprintf(":%s", port)}
+
+        go func() {
+            if err := server.ListenAndServe(); err != http.ErrServerClosed {
+                log.Fatal(err)
+            }
+        }()
+
+        stop := make(chan os.Signal, 1)
+        signal.Notify(stop, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+        <-stop
+
+        const delay = 10
+        ctx, cancel := context.WithTimeout(context.Background(), delay * time.Second)
+        defer cancel()
+        if err := server.Shutdown(ctx); err != nil {
+            log.Println(err)
+            return
+        }
 
     case "vote":
         competitionName := os.Args[2]
@@ -25,7 +49,8 @@ func main() {
 
         err := produce(competitionName, singerName)
         if err != nil {
-            panic(err)
+            log.Println(err)
+            return
         }
 
     case "get-votes":
@@ -35,9 +60,11 @@ func main() {
         closeConsumer := make(chan bool)
         err := consume(competitionName, data, closeConsumer)
         if err != nil {
-            panic(err)
+            log.Println(err)
+            return
         }
     default:
-        panic(fmt.Errorf("invalid action %#v", action))
+        log.Printf("invalid action %#v", action)
+        return
     }
 }
