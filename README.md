@@ -1,3 +1,7 @@
+## Architecture
+
+Client => Envoy => gRPC => Kafka?
+
 ## Usage
 
 1. Clone this repo
@@ -6,11 +10,10 @@
 
 3. docker-compose up -d
 
-4. `make topic` to create a "votes" Kafka topic
+4. `make competition competition=COMPETITION-NAME` to create a Kafka topic named "COMPETITION-NAME"
 
-5. `make vote singer=NAME-OF-SINGER` to vote for specified singer
+5. `make vote competition=COMPETITION-NAME singer=SINGER` to vote for specified singer competing in specified competition
 
-6. `make get-votes` to consume the votes (TODO: count the votes)
+6. `make get-votes competition=COMPETITION-NAME` to consume the votes for the specified competition (TODO: count the votes)
 
-7. `make delete-topic` to delete the "votes" Kafka topic
-
+7. `make delete-competition competition=COMPETITION-NAME` to delete the Kafka topic named "COMPETITION-NAME"
