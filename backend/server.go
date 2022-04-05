@@ -7,6 +7,7 @@ import (
     "io"
     "strings"
     "log"
+    "fmt"
 
     "github.com/gorilla/websocket"
 )
@@ -46,6 +47,9 @@ func getVotes(rw http.ResponseWriter, req *http.Request) {
     data := make(chan ConsumeType)
     closeConsumer := make(chan bool)
     go func() {
+        defer func() {
+            closeConsumer <- true
+        }()
         err = consume(competitionName, data, closeConsumer)
         if err != nil {
             log.Println(err)
@@ -77,7 +81,7 @@ func getVotes(rw http.ResponseWriter, req *http.Request) {
         err = ws.WriteMessage(1, marsh)
         if err != nil {
             log.Println(err)
-            ws.Close()
+            // ws.Close()
             closeConsumer <- true
             break
         }
@@ -86,6 +90,26 @@ func getVotes(rw http.ResponseWriter, req *http.Request) {
         err = ws.WriteMessage(1, []byte("\n"))
         if err != nil {
             log.Println(err)
+        }
+    }
+
+    wsReceiver(ws)
+}
+
+func wsReceiver(conn *websocket.Conn) {
+    for {
+        // read in a message
+        messageType, p, err := conn.ReadMessage()
+        if err != nil {
+            log.Println(err)
+            return
+        }
+        // print out that message for clarity
+        fmt.Println("DEBUG, received from Websocket:", string(p))
+
+        if err := conn.WriteMessage(messageType, p); err != nil {
+            log.Println(err)
+            return
         }
     }
 }
