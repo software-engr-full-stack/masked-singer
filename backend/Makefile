@@ -63,4 +63,4 @@ reset-competition:
 sh:
 	docker exec --interactive --tty broker bash
 
-.PHONY: vote get-votes competition delete-competition list-topics sh _build
+.PHONY: vote get-votes competition delete-competition list-topics sh _build serve http-vote http-get-votes
