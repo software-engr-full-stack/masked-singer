@@ -6,7 +6,6 @@ import (
     "os/signal"
     "syscall"
     "time"
-    "strings"
 
     "github.com/confluentinc/confluent-kafka-go/kafka"
 )
