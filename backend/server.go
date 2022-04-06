@@ -7,6 +7,8 @@ import (
     "io"
     "strings"
     "log"
+    "os"
+    "syscall"
     "fmt"
 
     "github.com/gorilla/websocket"
@@ -45,11 +47,8 @@ func getVotes(rw http.ResponseWriter, req *http.Request) {
     competitionName := strings.TrimSpace(query["competition_name"][0])
 
     data := make(chan ConsumeType)
-    closeConsumer := make(chan bool)
+    closeConsumer := make(chan os.Signal)
     go func() {
-        defer func() {
-            closeConsumer <- true
-        }()
         err = consume(competitionName, data, closeConsumer)
         if err != nil {
             log.Println(err)
@@ -82,18 +81,18 @@ func getVotes(rw http.ResponseWriter, req *http.Request) {
         if err != nil {
             log.Println(err)
             // ws.Close()
-            closeConsumer <- true
+            closeConsumer <- syscall.SIGTERM
             break
         }
 
-        // DEBUG: for curl test, put line breaks between responses
-        err = ws.WriteMessage(1, []byte("\n"))
-        if err != nil {
-            log.Println(err)
-        }
+        // // DEBUG: for curl test, put line breaks between responses
+        // err = ws.WriteMessage(1, []byte("\n"))
+        // if err != nil {
+        //     log.Println(err)
+        // }
     }
 
-    wsReceiver(ws)
+    // wsReceiver(ws)
 }
 
 func wsReceiver(conn *websocket.Conn) {
