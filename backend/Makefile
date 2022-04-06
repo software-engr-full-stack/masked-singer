@@ -35,7 +35,7 @@ vote: _build
 	${_build_file} 'vote' ${competition} ${singer}
 
 get-votes: _build
-	${_build_file} 'get-votes' ${competition} ${singer}
+	${_build_file} 'get-votes' ${competition}
 
 competition:
 	docker-compose exec broker \
