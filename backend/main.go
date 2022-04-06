@@ -57,11 +57,21 @@ func main() {
         competitionName := os.Args[2]
 
         data := make(chan ConsumeType)
-        closeConsumer := make(chan bool)
-        err := consume(competitionName, data, closeConsumer)
-        if err != nil {
-            log.Println(err)
-            return
+
+        closeConsumer := make(chan os.Signal, 1)
+        signal.Notify(closeConsumer, syscall.SIGINT, syscall.SIGTERM)
+
+        go func() {
+            err := consume(competitionName, data, closeConsumer)
+            if err != nil {
+                log.Println(err)
+                return
+            }
+            close(data)
+        }()
+
+        for item := range data {
+            log.Println("DEBUG:", item)
         }
     default:
         log.Printf("invalid action %#v", action)

@@ -3,8 +3,6 @@ package main
 import (
     "fmt"
     "os"
-    "os/signal"
-    "syscall"
     "time"
 
     "github.com/confluentinc/confluent-kafka-go/kafka"
@@ -16,7 +14,7 @@ type ConsumeType struct {
     Value string `json:"value"`
 }
 
-func consume(competitionName string, data chan<- ConsumeType, closeConsumer chan bool) error {
+func consume(competitionName string, data chan<- ConsumeType, closeConsumer chan os.Signal) error {
     config, err := NewConfig(competitionName)
     if err != nil {
         return err
@@ -35,20 +33,14 @@ func consume(competitionName string, data chan<- ConsumeType, closeConsumer chan
     if err != nil {
         return err
     }
-    // Set up a channel for handling Ctrl-C, etc
-    sigchan := make(chan os.Signal, 1)
-    signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
 
     // Process messages
     run := true
     const readDelay = 100
     for run {
         select {
-        case sig := <-sigchan:
-            fmt.Printf("Caught signal %v: terminating\n", sig)
-            run = false
         case sig := <-closeConsumer:
-            fmt.Printf("Caught signal %v from HTTP handler: terminating\n", sig)
+            fmt.Printf("Caught signal %#v: terminating\n", sig)
             run = false
         default:
             ev, err := c.ReadMessage(readDelay * time.Millisecond)
@@ -64,8 +56,6 @@ func consume(competitionName string, data chan<- ConsumeType, closeConsumer chan
             }
         }
     }
-
     c.Close()
-
     return nil
 }
