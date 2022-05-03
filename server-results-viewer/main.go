@@ -43,15 +43,15 @@ func main() {
             return
         }
 
-    case "vote":
-        competitionName := os.Args[2]
-        singerName := os.Args[3]
+    // case "vote":
+    //     competitionName := os.Args[2]
+    //     singerName := os.Args[3]
 
-        err := produce(competitionName, singerName)
-        if err != nil {
-            log.Println(err)
-            return
-        }
+    //     err := produce(competitionName, singerName)
+    //     if err != nil {
+    //         log.Println(err)
+    //         return
+    //     }
 
     case "get-votes":
         competitionName := os.Args[2]

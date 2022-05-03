@@ -32,10 +32,10 @@ func vote(rw http.ResponseWriter, req *http.Request) {
         log.Println(err)
     }
 
-    err = produce(request.CompetitionName, request.SingerName)
-    if err != nil {
-        log.Println(err)
-    }
+    // err = produce(request.CompetitionName, request.SingerName)
+    // if err != nil {
+    //     log.Println(err)
+    // }
 }
 
 func getVotes(rw http.ResponseWriter, req *http.Request) {
