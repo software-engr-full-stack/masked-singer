@@ -4,7 +4,6 @@ import (
     "encoding/json"
     "net/http"
     "net/url"
-    "io"
     "strings"
     "log"
     "os"
@@ -18,24 +17,6 @@ type RequestType struct {
     Action string `json:"action"` // "vote" or "get-votes"
     CompetitionName string `json:"competition_name"`
     SingerName string `json:"singer_name"`
-}
-
-func vote(rw http.ResponseWriter, req *http.Request) {
-    body, err := io.ReadAll(req.Body)
-    if err != nil {
-        log.Println(err)
-    }
-
-    var request RequestType
-    err = json.Unmarshal(body, &request)
-    if err != nil {
-        log.Println(err)
-    }
-
-    err = produce(request.CompetitionName, request.SingerName)
-    if err != nil {
-        log.Println(err)
-    }
 }
 
 func getVotes(rw http.ResponseWriter, req *http.Request) {

@@ -16,65 +16,31 @@ func main() {
         panic("must pass at least one arg, 'produce' or 'consume'")
     }
 
-    switch action := os.Args[1]; action {
-    case "serve":
-        port := os.Args[2]
-        http.HandleFunc("/vote", vote)
-        http.HandleFunc("/get-votes", getVotes)
+    serveGetVotes()
+}
 
-        server := &http.Server{Addr: fmt.Sprintf(":%s", port)}
+func serveGetVotes() {
+    port := 9092
+    http.HandleFunc("/get-votes", getVotes)
 
-        go func() {
-            if err := server.ListenAndServe(); err != http.ErrServerClosed {
-                log.Fatal(err)
-            }
-        }()
+    server := &http.Server{Addr: fmt.Sprintf(":%s", port)}
 
-        stop := make(chan os.Signal, 1)
-        signal.Notify(stop, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-
-        <-stop
-
-        const delay = 10
-        ctx, cancel := context.WithTimeout(context.Background(), delay * time.Second)
-        defer cancel()
-        if err := server.Shutdown(ctx); err != nil {
-            log.Println(err)
-            return
+    go func() {
+        if err := server.ListenAndServe(); err != http.ErrServerClosed {
+            log.Fatal(err)
         }
+    }()
 
-    case "vote":
-        competitionName := os.Args[2]
-        singerName := os.Args[3]
+    stop := make(chan os.Signal, 1)
+    signal.Notify(stop, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-        err := produce(competitionName, singerName)
-        if err != nil {
-            log.Println(err)
-            return
-        }
+    <-stop
 
-    case "get-votes":
-        competitionName := os.Args[2]
-
-        data := make(chan ConsumeType)
-
-        closeConsumer := make(chan os.Signal, 1)
-        signal.Notify(closeConsumer, syscall.SIGINT, syscall.SIGTERM)
-
-        go func() {
-            err := consume(competitionName, data, closeConsumer)
-            if err != nil {
-                log.Println(err)
-                return
-            }
-            close(data)
-        }()
-
-        for item := range data {
-            log.Println("DEBUG:", item)
-        }
-    default:
-        log.Printf("invalid action %#v", action)
+    const delay = 10
+    ctx, cancel := context.WithTimeout(context.Background(), delay * time.Second)
+    defer cancel()
+    if err := server.Shutdown(ctx); err != nil {
+        log.Println(err)
         return
     }
 }
