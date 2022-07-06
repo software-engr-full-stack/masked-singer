@@ -1,29 +1,29 @@
 package main
 
 import (
-    "time"
-    "syscall"
     "context"
-    "os"
+    "encoding/json"
+    "fmt"
+    "io"
     "log"
     "net/http"
-    "encoding/json"
-    "io"
-    "fmt"
+    "os"
     "os/signal"
+    "syscall"
+    "time"
 )
 
 type RequestType struct {
-    Action string `json:"action"` // "vote" or "get-votes"
+    Action          string `json:"action"` // "vote" or "get-votes"
     CompetitionName string `json:"competition_name"`
-    SingerName string `json:"singer_name"`
+    SingerName      string `json:"singer_name"`
 }
 
 func main() {
-    port := 9092
+    port := 8082
     http.HandleFunc("/vote", vote)
 
-    server := &http.Server{Addr: fmt.Sprintf(":%s", port)}
+    server := &http.Server{Addr: fmt.Sprintf(":%d", port)}
     if err := server.ListenAndServe(); err != http.ErrServerClosed {
         log.Fatal(err)
     }
@@ -34,7 +34,7 @@ func main() {
     <-stop
 
     const delay = 10
-    ctx, cancel := context.WithTimeout(context.Background(), delay * time.Second)
+    ctx, cancel := context.WithTimeout(context.Background(), delay*time.Second)
     defer cancel()
     if err := server.Shutdown(ctx); err != nil {
         log.Println(err)
