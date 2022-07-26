@@ -14,7 +14,6 @@ import (
 )
 
 type RequestType struct {
-    Action          string `json:"action"` // "vote" or "get-votes"
     CompetitionName string `json:"competition_name"`
     SingerName      string `json:"singer_name"`
 }
@@ -40,7 +39,7 @@ func main() {
         log.Println(err)
         return
     }
-    // GET /vote/?singer_name=batman&competition_name=contest-1
+    // TODO: GET /vote/?singer_name=batman&competition_name=contest-1
 
     competitionName := "contest-1"
     singerName := "michael"

@@ -1,35 +1,47 @@
-## Architectures
+Masked Singer
+=============
 
-- [ ] Client <=> Envoy <=> Go gRPC <=> Go Kafka client <=> Kafka
+## How to run
 
-- [x] Client <=> Go/HTTP/Websockets <=> Go Kafka client <=> Kafka
+```bash
+# Run Kafka on docker (See docker-compose.yml for details)
+docker-compose up
 
-- [ ] Client <=> Confluent Rest API <=> Kafka
+# Run 'localhost:8082' server
+cd server-votes
+go run -tags dynamic .
 
-## Usage
+# Try a vote
+curl --header "Content-Type: application/json" \
+    --request POST \
+    --data '{"action": "vote", "competition_name": "contest-1", "singer_name": "michael"}' \
+	http://localhost:8082/vote
+```
 
-1. Clone this repo
+## Kafka commands on docker
 
-2. `cd` into clone repo
+```bash
+# add a topic (See kafka.properties for the port number)
+docker-compose exec broker \
+  kafka-topics --create \
+    --topic contest-1 \
+    --bootstrap-server localhost:9092 \
+    --replication-factor 1 \
+    --partitions 1
 
-3. docker-compose up -d
+# delete a topic
+docker-compose exec broker \
+  kafka-topics --delete \
+    --topic contest-1 \
+    --bootstrap-server localhost:9092
 
-4. `cd` into `backend`
+# list topics
+docker-compose exec broker \
+  kafka-topics --list \
+    --bootstrap-server localhost:9092
 
-5. `make competition competition=COMPETITION-NAME` to create a Kafka topic named "COMPETITION-NAME"
-
-6. `make delete-competition competition=COMPETITION-NAME` to delete the Kafka topic named "COMPETITION-NAME"
-
-#### HTTP
-
-1. `make serve` to run the backend server. This will run in the foreground.
-
-2. `make http-get-votes competition=COMPETITION-NAME` to listen for votes using a cURL Websockets connection. This will run in the foreground.
-
-3. `make http-vote competition=COMPETITION-NAME singer=SINGER` to vote using cURL POST request
-
-#### Command line
-
-1. `make vote competition=COMPETITION-NAME singer=SINGER` to vote for specified singer competing in specified competition
-
-2. `make get-votes competition=COMPETITION-NAME` to consume the votes for the specified competition (TODO: count the votes)
+# list topic messages
+docker-compose exec broker \
+    kafka-console-consumer --bootstrap-server localhost:9092 \
+    --topic contest-1 --from-beginning
+```
