@@ -4,6 +4,8 @@ _build_file := ./build/masked-singer
 
 _http_port := 8082
 
+competition := contest-1
+
 _build:
 	go build -o ${_build_file} *.go
 
@@ -59,6 +61,11 @@ list-topics:
 reset-competition:
 	make delete-competition competition=${competition}; \
 	make competition competition=${competition}
+
+list-topic-messages:
+	docker-compose exec broker \
+		kafka-console-consumer --bootstrap-server localhost:${_port} \
+		--topic ${competition} --from-beginning
 
 sh:
 	docker exec --interactive --tty broker bash
